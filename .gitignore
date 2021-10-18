@@ -3,3 +3,9 @@
 
 # csv files
 *.csv
+
+
+# git usefull commands
+
+# git reset -> unstaged files
+# git reset --soft HEAD^ --> remove the last local (unpushed) commit, but will keep changes (!= --hard)
