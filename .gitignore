@@ -1,0 +1,5 @@
+# macOS files
+*.DS_store
+
+# csv files
+*.csv
