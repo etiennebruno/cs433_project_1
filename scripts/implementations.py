@@ -1,6 +1,6 @@
-#=============================================================================================================== HELPER FUNCTIONS
-
 import numpy as np
+
+#========================================================================================================================== HELPER FUNCTIONS
 
 def compute_loss(y, tx, w):
     """Calculate the loss.
@@ -10,10 +10,6 @@ def compute_loss(y, tx, w):
     N = len(e)
     return e.T @ e / (2 * N)
 
-def compute_loss_sol(y, tx, w):
-    """Calculate the mse for vector e."""
-    e = y - tx.dot(w)
-    return 1/2*np.mean(e**2)
 
 def compute_gradient(y, tx, w):
     """Compute the gradient."""
@@ -21,11 +17,6 @@ def compute_gradient(y, tx, w):
     N = len(e)
     return -1 / N * tx.T @ e
 
-def compute_gradient_sol(y, tx, w):
-    """Compute the gradient."""
-    err = y - tx.dot(w)
-    grad = -tx.T.dot(err) / len(err)
-    return grad, err
 
 def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):#                   <------- CHECK IF WE CAN USE THIS FUNCTION!!!!
     """
@@ -53,8 +44,56 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):#                
             yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
 
 
+def sigmoid(t):
+    """apply the sigmoid function on t."""
+    return np.exp(t) / (1 + np.exp(t))
 
-#=============================================================================================================== MAIN FUNCTIONS
+
+def compute_loss_logistic(y, tx, w):
+    """compute the loss: negative log likelihood."""
+    ŷ = tx @ w
+    loss = -1 * (y.T @ np.log(sigmoid(ŷ)) + (1 - y).T @ np.log(1 - sigmoid(ŷ)))
+    return loss
+
+
+def compute_gradient_logistic(y, tx, w):
+    """compute the gradient of loss."""
+    return tx.T @ (sigmoid(tx @ w) - y)
+
+
+def logistic_regression_one_iter(y, tx, w, gamma):
+    """
+    Do one step of gradient descen using logistic regression.
+    Return the loss and the updated w.
+    """
+    loss = compute_loss_logistic(y, tx, w)
+    grad = compute_gradient_logistic(y, tx, w)
+    w -= gamma * grad
+    return loss, w
+
+
+def penalized_logistic_regression(y, tx, w, lambda_):
+    """return the loss, gradient"""
+    norm_w = w.T @ w
+    loss = compute_loss_logistic(y, tx, w) + lambda_ * norm_w
+    norm_gradient = 2 * w       
+    gradient = compute_gradient_logistic(y, tx, w) + lambda_ * norm_gradient
+    return loss, gradient
+
+
+def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
+    """
+    Do one step of gradient descent, using the penalized logistic regression.
+    Return the loss and updated w.
+    """
+    loss, gradient = penalized_logistic_regression(y, tx, w, lambda_)
+    w = w - gamma * gradient
+    return loss, w
+
+
+#========================================================================================================================== MAIN FUNCTIONS
+
+
 def least_squares_GD(y, tx, initial_w, max_iters, gamma):
     """Gradient descent algorithm."""
     w = initial_w
@@ -66,22 +105,6 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
     loss = compute_loss(y, tx, w)
     return w, loss
 
-def least_squares_GD_sol(y, tx, initial_w, max_iters, gamma):
-    """Gradient descent algorithm."""
-    # Define parameters to store w and loss
-    ws = [initial_w]
-    losses = []
-    w = initial_w
-    for n_iter in range(max_iters):
-        # compute loss, gradient
-        grad, err = compute_gradient_sol(y, tx, w)
-        loss = compute_loss(y, tx, w)
-        # gradient w by descent update
-        w = w - gamma * grad
-        # store w and loss
-        ws.append(w)
-        losses.append(loss)
-    return ws[-1], losses[-1]
 
 def least_squares_SGD(
         y, tx, initial_w, batch_size, max_iters, gamma):
@@ -98,81 +121,52 @@ def least_squares_SGD(
     loss = compute_loss(y, tx, w)
     return w, loss
 
-def least_squares_SGD_sol(
-        y, tx, initial_w, batch_size, max_iters, gamma):
-    """Stochastic gradient descent algorithm."""
-    # Define parameters to store w and loss
-    ws = [initial_w]
-    losses = []
-    w = initial_w
-
-    for n_iter in range(max_iters):
-        for y_batch, tx_batch in batch_iter(y, tx, batch_size=batch_size, num_batches=1):
-            # compute a stochastic gradient and loss
-            grad = compute_stoch_gradient(y_batch, tx_batch, w)
-            # update w through the stochastic gradient update
-            w = w - gamma * grad
-            # calculate loss
-            loss = compute_loss(y, tx, w)
-            # store w and loss
-            ws.append(w)
-            losses.append(loss)
-
-        print("SGD({bi}/{ti}): loss={l}, w0={w0}, w1={w1}".format(
-              bi=n_iter, ti=max_iters - 1, l=loss, w0=w[0], w1=w[1]))
-    return losses, ws
     
 def least_squares(y, tx):
     """calculate the least squares solution."""
-    
-    # least squares
-    # returns mse, and optimal weights 
     X = tx
     w = np.linalg.solve(X.T @ X, X.T @ y)
     loss = compute_loss(y, X, w)
-    
     return w, loss
     
-def least_squares_sol(y, tx):
-    """calculate the least squares solution."""
-    a = tx.T.dot(tx)
-    b = tx.T.dot(y)
-    return np.linalg.solve(a, b)
     
 def ridge_regression(y, tx, lambda_):
     """implement ridge regression."""
-    
-    # ridge regression
     X = tx
     N = X.shape[0]
     I = np.identity(X.shape[1])
     lambda_p = 2 * N * lambda_
-     
     w = np.linalg.solve(X.T @ X + lambda_p * I, X.T @ y)   
     loss = compute_loss(y, X, w)
-    
     return w, loss
+
+
+def logistic_regression(y, tx, initial_w, max_iters, gamma):
+    w = initial_w
+    threshold = 1e-8
+    losses = []
+
+    for iter in range(max_iters):
+        loss, w = logistic_regression_one_iter(y, tx, w, gamma)
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break
+    return w, losses[-1]
     
-def ridge_regression_sol(y, tx, lambda_):
-    """implement ridge regression."""
-    aI = 2 * tx.shape[0] * lambda_ * np.identity(tx.shape[1])
-    a = tx.T.dot(tx) + aI
-    b = tx.T.dot(y)
-    return np.linalg.solve(a, b)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+    threshold = 1e-8
+    losses = []
+    w = initial_w
+
+    # start the logistic regression
+    for iter in range(max_iter):
+        # get loss and update w.
+        loss, w = learning_by_penalized_gradient(y, tx, w, gamma, lambda_)
+        
+        # converge criterion
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break
+    return w, losses[-1]
+ 
