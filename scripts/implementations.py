@@ -18,7 +18,7 @@ def compute_gradient(y, tx, w):
     return -1 / N * tx.T @ e
 
 
-def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):#                   <------- CHECK IF WE CAN USE THIS FUNCTION!!!!
+def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):#                   
     """
     Generate a minibatch iterator for a dataset.
     Takes as input two iterables (here the output desired values 'y' and the input data 'tx')
@@ -90,6 +90,158 @@ def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
     w = w - gamma * gradient
     return loss, w
 
+def build_poly(x, degree):
+    """polynomial basis functions for input data x, for j=0 up to j=degree."""
+    # polynomial basis function
+    # this function should return the matrix formed
+    # by applying the polynomial basis to the input data
+    
+    H = np.ones((len(x),degree+1))
+    
+    for i in range(len(x)):
+        for j in range(1, degree+1):
+            H[i,j] = np.power(x[i],j)
+    
+    return H
+
+def build_k_indices(y, k_fold, seed):
+    """build k indices for k-fold."""
+    num_row = y.shape[0]
+    interval = int(num_row / k_fold)
+    np.random.seed(seed)
+    indices = np.random.permutation(num_row)
+    k_indices = [indices[k * interval: (k + 1) * interval] for k in range(k_fold)]
+    return np.array(k_indices)
+
+def cross_validation_ridge(y, x, k_indices, k, lambda_, degree):
+    """return the loss of ridge regression."""
+    # get k'th subgroup in test, others in train
+    te_indice = k_indices[k]
+    tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)] 
+    tr_indice = tr_indice.reshape(-1)
+    x_tr = x[tr_indice]
+    y_tr = y[tr_indice]
+    x_te = x[te_indice]
+    y_te = y[te_indice]
+    
+    # form data with polynomial degree
+    tx_tr = build_poly(x_tr,degree)
+    tx_te = build_poly(x_te,degree)
+    
+    # ridge regression
+    w = ridge_regression(y_tr, tx_tr, lambda_)
+    
+    # calculate the loss for train and test data   
+    loss_tr = compute_rmse(y_tr, tx_tr, w)
+    loss_te = compute_rmse(y_te, tx_te, w)
+    
+    return loss_tr, loss_te
+
+def cross_validation_demo_ridge(seed, degree, k_fold, lambdas):
+    # split data in k fold
+    k_indices = build_k_indices(y, k_fold, seed)
+    # define lists to store the loss of training data and test data
+    rmse_tr = []
+    rmse_te = []
+    # cross validation
+    for lambda_ in lambdas:
+        rmse_tr_tmp = []
+        rmse_te_tmp = []
+        for k in range(k_fold):
+            loss_tr, loss_te = cross_validation(y, x, k_indices, k, lambda_, degree)
+            rmse_tr_tmp.append(loss_tr)
+            rmse_te_tmp.append(loss_te)
+        rmse_tr.append(np.mean(rmse_tr_tmp))
+        rmse_te.append(np.mean(rmse_te_tmp))
+    
+    return rmse_tr, rmse_te
+
+def cross_validation_logistic(y, x, k_indices, k, gamma, degree):
+    """return the loss of ridge regression."""
+    # get k'th subgroup in test, others in train
+    te_indice = k_indices[k]
+    tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)] 
+    tr_indice = tr_indice.reshape(-1)
+    x_tr = x[tr_indice]
+    y_tr = y[tr_indice]
+    x_te = x[te_indice]
+    y_te = y[te_indice]
+    
+    # form data with polynomial degree
+    tx_tr = build_poly(x_tr,degree)
+    tx_te = build_poly(x_te,degree)
+    
+    # logistic regression
+    w = logistic_regression(y_tr, tx_tr, initial_w, max_iters, gamma)
+    
+    # calculate the loss for train and test data   
+    loss_tr = compute_rmse(y_tr, tx_tr, w)
+    loss_te = compute_rmse(y_te, tx_te, w)
+    
+    return loss_tr, loss_te
+
+def cross_validation_demo_logistic(seed, degree, k_fold, gammas):
+    # split data in k fold
+    k_indices = build_k_indices(y, k_fold, seed)
+    # define lists to store the loss of training data and test data
+    rmse_tr = []
+    rmse_te = []
+    # cross validation
+    for gamma in gammas:
+        rmse_tr_tmp = []
+        rmse_te_tmp = []
+        for k in range(k_fold):
+            loss_tr, loss_te = cross_validation(y, x, k_indices, k, gamma, degree)
+            rmse_tr_tmp.append(loss_tr)
+            rmse_te_tmp.append(loss_te)
+        rmse_tr.append(np.mean(rmse_tr_tmp))
+        rmse_te.append(np.mean(rmse_te_tmp))
+    
+    return rmse_tr, rmse_te
+
+def cross_validation_reg_logistic(y, x, k_indices, k, lambda_, gamma, degree):
+    """return the loss of ridge regression."""
+    # get k'th subgroup in test, others in train
+    te_indice = k_indices[k]
+    tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)] 
+    tr_indice = tr_indice.reshape(-1)
+    x_tr = x[tr_indice]
+    y_tr = y[tr_indice]
+    x_te = x[te_indice]
+    y_te = y[te_indice]
+    
+    # form data with polynomial degree
+    tx_tr = build_poly(x_tr,degree)
+    tx_te = build_poly(x_te,degree)
+    
+    # regularized logistic regression
+    w = reg_logistic_regression(y_tr, tx_tr, lambda_, initial_w, max_iters, gamma)
+    
+    # calculate the loss for train and test data   
+    loss_tr = compute_rmse(y_tr, tx_tr, w)
+    loss_te = compute_rmse(y_te, tx_te, w)
+    
+    return loss_tr, loss_te
+
+def cross_validation_demo_reg_logistic(seed, degree, k_fold, lambas, gammas):
+    # split data in k fold
+    k_indices = build_k_indices(y, k_fold, seed)
+    # define arrays to store the loss of training data and test data
+    rmse_tr = [][]
+    rmse_te = [][]
+    # cross validation
+    for index_lambda, lambda_ in lambdas:
+        rmse_tr_tmp = [][]
+        rmse_te_tmp = [][]
+        for index_gamma, gamma in gammas:
+            for k in range(k_fold):
+                loss_tr, loss_te = cross_validation(y, x, k_indices, k, gamma, degree)
+                rmse_tr_tmp.append(loss_tr)
+                rmse_te_tmp.append(loss_te)
+        rmse_tr[index_lambda][index_gamma] = np.mean(rmse_tr_tmp)
+        rmse_te[index_lambda][index gamma] = np.mean(rmse_te_tmp)
+    
+    return rmse_tr, rmse_te
 
 #========================================================================================================================== MAIN FUNCTIONS
 
