@@ -137,26 +137,34 @@ def cross_validation_ridge(y, x, k_indices, k, lambda_, degree):
     
     return loss_tr, loss_te
 
-def cross_validation_demo_ridge(seed, degree, k_fold, lambdas):
+def cross_validation_demo_ridge(seed, degrees, k_fold, lambdas):
     # split data in k fold
     k_indices = build_k_indices(y, k_fold, seed)
-    # define lists to store the loss of training data and test data
-    rmse_tr = []
-    rmse_te = []
-    # cross validation
-    for lambda_ in lambdas:
-        rmse_tr_tmp = []
-        rmse_te_tmp = []
-        for k in range(k_fold):
-            loss_tr, loss_te = cross_validation(y, x, k_indices, k, lambda_, degree)
-            rmse_tr_tmp.append(loss_tr)
-            rmse_te_tmp.append(loss_te)
-        rmse_tr.append(np.mean(rmse_tr_tmp))
-        rmse_te.append(np.mean(rmse_te_tmp))
+    # define lists to store the loss of test data and best lambda   
+    best_rmses = []
+    best_lambdas = []
+    for degree in degrees:
+        rmse_te = []
+        # cross validation
+        for lambda_ in lambdas:
+            rmse_te_tmp = []
+            for k in range(k_fold):                
+                _, loss_te = cross_validation(y, x, k_indices, k, lambda_, degree)
+                rmse_te_tmp.append(loss_te)
+            rmse_te.append(np.mean(rmse_te_tmp))
+        
+        ind_best_lambda = np.argmin(rmse_te)
+        best_lambdas.append(lambdas[ind_best_lambda])
+        best_rmses.append(rmse_te[ind_best_lambda])
+        
+    ind_best_degree =  np.argmin(best_rmses)
     
-    return rmse_tr, rmse_te
+    best_degree = degrees[ind_best_degree]
+    best_lambda = best_lambdas[ind_best_degree]  #pas sur
+    
+    return best_degree, best_lambda
 
-def cross_validation_logistic(y, x, k_indices, k, gamma, degree):
+def cross_validation_logistic(y, x, initial_w, max_iters, k_indices, k, gamma, degree):
     """return the loss of ridge regression."""
     # get k'th subgroup in test, others in train
     te_indice = k_indices[k]
@@ -180,26 +188,33 @@ def cross_validation_logistic(y, x, k_indices, k, gamma, degree):
     
     return loss_tr, loss_te
 
-def cross_validation_demo_logistic(seed, degree, k_fold, gammas):
+def cross_validation_demo_logistic(y, x, initial_w, max_iters, seed, degrees, k_fold, gammas):
     # split data in k fold
     k_indices = build_k_indices(y, k_fold, seed)
-    # define lists to store the loss of training data and test data
-    rmse_tr = []
-    rmse_te = []
-    # cross validation
-    for gamma in gammas:
-        rmse_tr_tmp = []
-        rmse_te_tmp = []
-        for k in range(k_fold):
-            loss_tr, loss_te = cross_validation(y, x, k_indices, k, gamma, degree)
-            rmse_tr_tmp.append(loss_tr)
-            rmse_te_tmp.append(loss_te)
-        rmse_tr.append(np.mean(rmse_tr_tmp))
-        rmse_te.append(np.mean(rmse_te_tmp))
+    # define lists to store the loss of test data and gamma
+    best_rmses = []
+    best_gammas = []
+    for degree in degrees:
+        rmse_te = []
+        # cross validation
+        for gamma in gammas:
+            rmse_te_tmp = []
+            for k in range(k_fold):               
+                _, loss_te = cross_validation_logistic(y, x, initial_w, max_iters, k_indices, k, gamma, degree)
+                rmse_te_tmp.append(loss_te)
+            rmse_te.append(np.mean(rmse_te_tmp))
+        
+        ind_best_gamma = np.argmin(rmse_te)
+        best_gammas.append(gammas[ind_best_gamma])
+        best_rmses.append(rmse_te[ind_best_gamma])
+        
+    ind_best_degree =  np.argmin(best_rmses)
+    best_degree = degrees[ind_best_degree]
+    best_gamma = best_gammas[ind_best_degree] #pas sur
     
-    return rmse_tr, rmse_te
+    return best_degree, best_gamma
 
-def cross_validation_reg_logistic(y, x, k_indices, k, lambda_, gamma, degree):
+def cross_validation_reg_logistic(y, x, initial_w, max_iters, k_indices, k, lambda_, gamma, degree):
     """return the loss of ridge regression."""
     # get k'th subgroup in test, others in train
     te_indice = k_indices[k]
@@ -223,25 +238,40 @@ def cross_validation_reg_logistic(y, x, k_indices, k, lambda_, gamma, degree):
     
     return loss_tr, loss_te
 
-def cross_validation_demo_reg_logistic(seed, degree, k_fold, lambas, gammas):
+def cross_validation_demo_reg_logistic(y, x, initial_w, max_iters, seed, degree, k_fold, lambas, gammas):
     # split data in k fold
     k_indices = build_k_indices(y, k_fold, seed)
-    # define arrays to store the loss of training data and test data
-    rmse_tr = [][]
-    rmse_te = [][]
-    # cross validation
-    for index_lambda, lambda_ in lambdas:
-        rmse_tr_tmp = [][]
-        rmse_te_tmp = [][]
-        for index_gamma, gamma in gammas:
-            for k in range(k_fold):
-                loss_tr, loss_te = cross_validation(y, x, k_indices, k, gamma, degree)
-                rmse_tr_tmp.append(loss_tr)
-                rmse_te_tmp.append(loss_te)
-        rmse_tr[index_lambda][index_gamma] = np.mean(rmse_tr_tmp)
-        rmse_te[index_lambda][index gamma] = np.mean(rmse_te_tmp)
+    # define lists to store the loss of test data, gamma and lambda
+    best_rmses = []
+    best_gammas = []
+    best_lambdas = []
+    for degree in degrees:
+        rmse_te_lambda = []
+        # cross validation
+        for lambda_ in lambdas:
+            rmse_te_gamma = []
+            for gamma in gammas:
+                rmse_te_k = []
+                for k in range(k_fold):
+                    _, loss_te = cross_validation_reg_logistic(y, x, initial_w, max_iters, k_indices, k, lambda_, gamma, degree)
+                    rmse_te_k.append(loss_te)
+                rmse_te_gamma.append(np.mean(rmse_te_k))
+        
+            ind_best_gamma = np.argmin(rmse_te_gamma)
+            best_gammas.append(gammas[ind_best_gamma])
+            rmse_te_lambda.append(rmse_te_gamma[ind_best_gamma])
+         
+        ind_best_lambda = np.argmin(rmse_te_lambda)
+        best_lambdas.append(lambdas[ind_best_lambda])
+        best_rmses.append(rmse_te_lambda[ind_best_lambda])
     
-    return rmse_tr, rmse_te
+    ind_best_degree =  np.argmin(best_rmses)
+    
+    best_degree = degrees[ind_best_degree]
+    best_gamma = best_gammas[ind_best_degree] #pas sur
+    best_lambda = best_lambdas[ind_best_degree] #pas sur
+    
+    return best_degree, best_gamma, best_lambda
 
 #========================================================================================================================== MAIN FUNCTIONS
 
