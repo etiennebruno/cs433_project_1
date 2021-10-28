@@ -11,11 +11,13 @@ def compute_loss(y, tx, w):
     N = len(e)
     return e.T @ e / (2 * N)
 
+
 def compute_rmse(y, tx, w):
     """compute the loss by mse."""
     e = y - tx.dot(w)
     mse = e.dot(e) / (2 * len(e))
     return np.sqrt(2 * mse)
+
 
 def compute_gradient(y, tx, w):
     """Compute the gradient."""
@@ -59,7 +61,7 @@ def logistic_regression_one_iter(y, tx, w, gamma):
     return loss, w
 
 
-def penalized_logistic_regression(y, tx, w, lambda_):
+def penalized_logistic_regression_one_iter(y, tx, w, lambda_):
     """return the loss, gradient"""
     norm_w = w.T @ w
     loss = compute_loss_logistic(y, tx, w) + lambda_ * norm_w
@@ -68,25 +70,14 @@ def penalized_logistic_regression(y, tx, w, lambda_):
     return loss, gradient
 
 
-def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
+def learning_by_penalized_gradient_one_iter(y, tx, w, gamma, lambda_):
     """
     Do one step of gradient descent, using the penalized logistic regression.
     Return the loss and updated w.
     """
-    loss, gradient = penalized_logistic_regression(y, tx, w, lambda_)
+    loss, gradient = penalized_logistic_regression_one_iter(y, tx, w, lambda_)
     w = w - gamma * gradient
     return loss, w
-
-
-def build_poly_nostro(x, degree):
-    """polynomial basis functions for input data x, for j=0 up to j=degree.
-    This function returns the matrix formed
-    by applying the polynomial basis to the input data"""
-    H = np.ones((len(x),degree+1))
-    for i in range(len(x)):
-        for j in range(1, degree+1):
-            H[i,j] = np.power(x[i],j)
-    return H
 
 
 def build_poly(x, degree):
@@ -174,7 +165,6 @@ def cross_validation_logistic(y, x, max_iters, k_indices, k, gamma, degree):
     x_te = x[te_indice]
     y_te = y[te_indice]
 
-
     # form data with polynomial degree
     tx_tr = build_poly(x_tr,degree)
     tx_te = build_poly(x_te,degree)
@@ -196,28 +186,32 @@ def cross_validation_demo_logistic(y, x, max_iters, seed, degrees, k_fold, gamma
     # define lists to store the loss of test data and gamma
     best_rmses = []
     best_gammas = []
+    avg_losses = []
+
     for degree in degrees:
         rmse_te = []
         # cross validation
         for gamma in gammas:
             rmse_te_tmp = []
             for k in range(k_fold):
-                _, loss_te = cross_validation_logistic(y, x, max_iters, k_indices, k, gamma, degree)
+                _,loss_te = cross_validation_logistic(y, x, max_iters, k_indices, k, gamma, degree)
                 rmse_te_tmp.append(loss_te)
             rmse_te.append(np.mean(rmse_te_tmp))
 
         ind_best_gamma = np.argmin(rmse_te)
         best_gammas.append(gammas[ind_best_gamma])
         best_rmses.append(rmse_te[ind_best_gamma])
+        avg_losses.append(min(rmse_te))
 
     ind_best_degree =  np.argmin(best_rmses)
     best_degree = degrees[ind_best_degree]
-    best_gamma = best_gammas[ind_best_degree] #pas sur
+    best_gamma = best_gammas[ind_best_degree]
+    print(avg_losses)
 
-    return best_degree, best_gamma
+    return best_degree, best_gamma, min(avg_losses)
 
 
-def cross_validation_reg_logistic(y, x, initial_w, max_iters, k_indices, k, lambda_, gamma, degree):
+def cross_validation_reg_logistic(y, x, max_iters, k_indices, k, lambda_, gamma, degree):
     """return the loss of ridge regression."""
     # get k'th subgroup in test, others in train
     te_indice = k_indices[k]
@@ -231,6 +225,7 @@ def cross_validation_reg_logistic(y, x, initial_w, max_iters, k_indices, k, lamb
     # form data with polynomial degree
     tx_tr = build_poly(x_tr,degree)
     tx_te = build_poly(x_te,degree)
+    initial_w = np.zeros(tx_tr.shape[1])
 
     # regularized logistic regression
     w,_ = reg_logistic_regression(y_tr, tx_tr, lambda_, initial_w, max_iters, gamma)
@@ -241,13 +236,14 @@ def cross_validation_reg_logistic(y, x, initial_w, max_iters, k_indices, k, lamb
 
     return loss_tr, loss_te
 
-def cross_validation_demo_reg_logistic(y, x, initial_w, max_iters, seed, degree, k_fold, lambas, gammas):
+def cross_validation_demo_reg_logistic(y, x, max_iters, seed, degrees, k_fold, lambdas, gammas):
     # split data in k fold
     k_indices = build_k_indices(y, k_fold, seed)
     # define lists to store the loss of test data, gamma and lambda
     best_rmses = []
     best_gammas = []
     best_lambdas = []
+
     for degree in degrees:
         rmse_te_lambda = []
         # cross validation
@@ -256,7 +252,7 @@ def cross_validation_demo_reg_logistic(y, x, initial_w, max_iters, seed, degree,
             for gamma in gammas:
                 rmse_te_k = []
                 for k in range(k_fold):
-                    _, loss_te = cross_validation_reg_logistic(y, x, initial_w, max_iters, k_indices, k, lambda_, gamma, degree)
+                    _, loss_te = cross_validation_reg_logistic(y, x, max_iters, k_indices, k, lambda_, gamma, degree)
                     rmse_te_k.append(loss_te)
                 rmse_te_gamma.append(np.mean(rmse_te_k))
 
@@ -271,8 +267,8 @@ def cross_validation_demo_reg_logistic(y, x, initial_w, max_iters, seed, degree,
     ind_best_degree =  np.argmin(best_rmses)
 
     best_degree = degrees[ind_best_degree]
-    best_gamma = best_gammas[ind_best_degree] #pas sur
-    best_lambda = best_lambdas[ind_best_degree] #pas sur
+    best_gamma = best_gammas[ind_best_degree]
+    best_lambda = best_lambdas[ind_best_degree]
 
     return best_degree, best_gamma, best_lambda
 
@@ -374,9 +370,9 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     w = initial_w
 
     # start the logistic regression
-    for iter in range(max_iter):
+    for iter in range(max_iters):
         # get loss and update w.
-        loss, w = learning_by_penalized_gradient(y, tx, w, gamma, lambda_)
+        loss, w = learning_by_penalized_gradient_one_iter(y, tx, w, gamma, lambda_)
 
         # converge criterion
         losses.append(loss)
