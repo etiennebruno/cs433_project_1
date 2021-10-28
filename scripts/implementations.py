@@ -35,14 +35,14 @@ def compute_stoch_gradient(y, tx, w):
 
 def sigmoid(t):
     """apply the sigmoid function on t."""
-    return np.exp(t) / (1 + np.exp(t))
+    return 1. / (1 + np.exp(-t))
 
 
 def compute_loss_logistic(y, tx, w):
     """compute the loss: negative log likelihood."""
-    y_hat = tx @ w
-    loss = -1 * (y.T @ np.log(sigmoid(y_hat)) + (1 - y).T @ np.log(1 - sigmoid(y_hat)))
-    return loss
+    y_hat = sigmoid(tx @ w)
+    loss = -y.T @ np.log(y_hat) - (1 - y).T @ np.log(1 - y_hat)
+    return np.squeeze(loss)
 
 
 def compute_gradient_logistic(y, tx, w):
@@ -56,6 +56,7 @@ def logistic_regression_one_iter(y, tx, w, gamma):
     Return the loss and the updated w.
     """
     loss = compute_loss_logistic(y, tx, w)
+    #print(loss) # HERE
     grad = compute_gradient_logistic(y, tx, w)
     w -= gamma * grad
     return loss, w
@@ -131,6 +132,7 @@ def cross_validation_demo_ridge(y, x, seed, degrees, k_fold, lambdas):
     # define lists to store the loss of test data and best lambda
     best_rmses = []
     best_lambdas = []
+
     for degree in degrees:
         rmse_te = []
         # cross validation
@@ -144,6 +146,7 @@ def cross_validation_demo_ridge(y, x, seed, degrees, k_fold, lambdas):
         ind_best_lambda = np.argmin(rmse_te)
         best_lambdas.append(lambdas[ind_best_lambda])
         best_rmses.append(rmse_te[ind_best_lambda])
+        print(f"min loss for a {degree} polynomial expansion feature = {min(rmse_te)}")
 
     ind_best_degree =  np.argmin(best_rmses)
 
@@ -186,7 +189,6 @@ def cross_validation_demo_logistic(y, x, max_iters, seed, degrees, k_fold, gamma
     # define lists to store the loss of test data and gamma
     best_rmses = []
     best_gammas = []
-    avg_losses = []
 
     for degree in degrees:
         rmse_te = []
@@ -196,19 +198,19 @@ def cross_validation_demo_logistic(y, x, max_iters, seed, degrees, k_fold, gamma
             for k in range(k_fold):
                 _,loss_te = cross_validation_logistic(y, x, max_iters, k_indices, k, gamma, degree)
                 rmse_te_tmp.append(loss_te)
+            print(rmse_te_tmp)
             rmse_te.append(np.mean(rmse_te_tmp))
 
         ind_best_gamma = np.argmin(rmse_te)
         best_gammas.append(gammas[ind_best_gamma])
         best_rmses.append(rmse_te[ind_best_gamma])
-        avg_losses.append(min(rmse_te))
 
     ind_best_degree =  np.argmin(best_rmses)
     best_degree = degrees[ind_best_degree]
     best_gamma = best_gammas[ind_best_degree]
-    print(avg_losses)
+    print(f"##### {best_rmses} ####")
 
-    return best_degree, best_gamma, min(avg_losses)
+    return best_degree, best_gamma, min(best_rmses)
 
 
 def cross_validation_reg_logistic(y, x, max_iters, k_indices, k, lambda_, gamma, degree):
