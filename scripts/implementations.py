@@ -14,8 +14,9 @@ def compute_loss(y, tx, w):
 
 def compute_rmse(y, tx, w):
     """compute the loss by mse."""
-    e = y - tx.dot(w)
-    mse = e.dot(e) / (2 * len(e))
+    w.flatten()
+    e = y - tx @ w
+    mse = e @ e / (2 * len(e))
     return np.sqrt(2 * mse)
 
 
@@ -134,6 +135,8 @@ def cross_validation_ridge(y, x, k_indices, k, lambda_, degree):
     tx_tr = build_poly(x_tr,degree)
     tx_te = build_poly(x_te,degree)
 
+    print(f"before ridge, x shape = {tx_tr.shape}")
+
     # ridge regression
     w,_ = ridge_regression(y_tr, tx_tr, lambda_)
 
@@ -193,8 +196,8 @@ def cross_validation_logistic(y, x, max_iters, k_indices, k, gamma, degree):
     w,_ = logistic_regression(y_tr, tx_tr, max_iters, gamma)
 
     # calculate the loss for train and test data
-    loss_tr = compute_rmse(y_tr, tx_tr, w)
-    loss_te = compute_rmse(y_te, tx_te, w)
+    loss_tr = compute_loss_logistic(y_tr, tx_tr, w)
+    loss_te = compute_loss_logistic(y_te, tx_te, w)
 
     return loss_tr, loss_te
 
@@ -369,13 +372,12 @@ def ridge_regression(y, tx, lambda_):
     return w, loss
 
 
-def logistic_regression(y, x, max_iters, gamma):
+def logistic_regression(y, tx, max_iters, gamma):
     # init parameters
     threshold = 1e-8
     losses = []
 
-    # build tx
-    tx = np.c_[np.ones((y.shape[0], 1)), x]
+    # build w
     w = np.zeros((tx.shape[1], 1))
 
     # start the logistic regression
