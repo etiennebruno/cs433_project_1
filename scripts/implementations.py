@@ -35,31 +35,49 @@ def compute_stoch_gradient(y, tx, w):
 
 def sigmoid(t):
     """apply the sigmoid function on t."""
-    return 1. / (1 + np.exp(-t))
+    return 1.0 / (1 + np.exp(-t))
 
 
 def compute_loss_logistic(y, tx, w):
     """compute the loss: negative log likelihood."""
     y_hat = sigmoid(tx @ w)
-    loss = -y.T @ np.log(y_hat) - (1 - y).T @ np.log(1 - y_hat)
-    return np.squeeze(loss)
+    y_hat[y_hat == 1.0] = 0.999999999999
+    y_hat[y_hat == 0.0] = 1e-20
+    loss = (y.T @ np.log(y_hat)) + ((1 - y).T @ np.log(1 - y_hat))
+    return np.squeeze(- loss)
 
 
 def compute_gradient_logistic(y, tx, w):
     """compute the gradient of loss."""
-    return tx.T @ (sigmoid(tx @ w) - y)
+    y_hat = sigmoid(tx.dot(w))
+    grad = tx.T @ (y_hat - y.reshape((y.shape[0], 1)))
+    return grad
 
 
-def logistic_regression_one_iter(y, tx, w, gamma):
+def learning_by_gradient_descent(y, tx, w, gamma):
     """
-    Do one step of gradient descen using logistic regression.
+    Do one step of gradient descent using logistic regression.
     Return the loss and the updated w.
     """
+    # compute the loss:
     loss = compute_loss_logistic(y, tx, w)
-    #print(loss) # HERE
+    # compute the gradient:
     grad = compute_gradient_logistic(y, tx, w)
+    # update w:
     w -= gamma * grad
     return loss, w
+
+
+# def logistic_regression_one_iter(y, tx, w, gamma):
+#     """
+#     Do one step of gradient descen using logistic regression.
+#     Return the loss and the updated w.
+#     """
+#     loss = compute_loss_logistic(y, tx, w)
+#     #print(loss) # HERE
+#     grad = compute_gradient_logistic(y, tx, w)
+#     w -= gamma * grad
+#     return loss, w
 
 
 def penalized_logistic_regression_one_iter(y, tx, w, lambda_):
@@ -146,13 +164,12 @@ def cross_validation_demo_ridge(y, x, seed, degrees, k_fold, lambdas):
         ind_best_lambda = np.argmin(rmse_te)
         best_lambdas.append(lambdas[ind_best_lambda])
         best_rmses.append(rmse_te[ind_best_lambda])
-        print(f"min loss for a {degree} polynomial expansion feature = {min(rmse_te)}")
+        print(f"    min loss for a {degree} polynomial expansion feature = {min(rmse_te)}")
 
     ind_best_degree =  np.argmin(best_rmses)
 
     best_degree = degrees[ind_best_degree]
-    best_lambda = best_lambdas[ind_best_degree]  #pas sur
-
+    best_lambda = best_lambdas[ind_best_degree]
     return best_degree, best_lambda
 
 
@@ -171,10 +188,9 @@ def cross_validation_logistic(y, x, max_iters, k_indices, k, gamma, degree):
     # form data with polynomial degree
     tx_tr = build_poly(x_tr,degree)
     tx_te = build_poly(x_te,degree)
-    initial_w = np.zeros(tx_tr.shape[1])
 
     # logistic regression
-    w,_ = logistic_regression(y_tr, tx_tr, initial_w, max_iters, gamma)
+    w,_ = logistic_regression(y_tr, tx_tr, max_iters, gamma)
 
     # calculate the loss for train and test data
     loss_tr = compute_rmse(y_tr, tx_tr, w)
@@ -198,7 +214,7 @@ def cross_validation_demo_logistic(y, x, max_iters, seed, degrees, k_fold, gamma
             for k in range(k_fold):
                 _,loss_te = cross_validation_logistic(y, x, max_iters, k_indices, k, gamma, degree)
                 rmse_te_tmp.append(loss_te)
-            print(rmse_te_tmp)
+            #print(rmse_te_tmp)
             rmse_te.append(np.mean(rmse_te_tmp))
 
         ind_best_gamma = np.argmin(rmse_te)
@@ -353,17 +369,39 @@ def ridge_regression(y, tx, lambda_):
     return w, loss
 
 
-def logistic_regression(y, tx, initial_w, max_iters, gamma):
-    w = initial_w
+def logistic_regression(y, x, max_iters, gamma):
+    # init parameters
     threshold = 1e-8
     losses = []
 
+    # build tx
+    tx = np.c_[np.ones((y.shape[0], 1)), x]
+    w = np.zeros((tx.shape[1], 1))
+
+    # start the logistic regression
     for iter in range(max_iters):
-        loss, w = logistic_regression_one_iter(y, tx, w, gamma)
+        # get loss and update w.
+        loss, w = learning_by_gradient_descent(y, tx, w, gamma)
+        # log info
+        if iter % 1000 == 0:
+            print("    Current iteration={i}, loss={l}".format(i=iter, l=loss))
+        # converge criterion
         losses.append(loss)
         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
             break
     return w, losses[-1]
+
+# def logistic_regression(y, tx, initial_w, max_iters, gamma):
+#     w = initial_w
+#     threshold = 1e-8
+#     losses = []
+#
+#     for iter in range(max_iters):
+#         loss, w = logistic_regression_one_iter(y, tx, w, gamma)
+#         losses.append(loss)
+#         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+#             break
+#     return w, losses[-1]
 
 
 def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
