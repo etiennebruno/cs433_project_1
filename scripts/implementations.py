@@ -246,14 +246,14 @@ def cross_validation_reg_logistic(y, x, max_iters, k_indices, k, lambda_, gamma,
     # form data with polynomial degree
     tx_tr = build_poly(x_tr,degree)
     tx_te = build_poly(x_te,degree)
-    initial_w = np.zeros(tx_tr.shape[1])
+    initial_w = np.zeros((tx_tr.shape[1],1))
 
     # regularized logistic regression
     w,_ = reg_logistic_regression(y_tr, tx_tr, lambda_, initial_w, max_iters, gamma)
 
     # calculate the loss for train and test data
-    loss_tr = compute_rmse(y_tr, tx_tr, w)     #chan
-    loss_te = compute_rmse(y_te, tx_te, w)
+    loss_tr = compute_loss_logistic(y_tr, tx_tr, w)
+    loss_te = compute_loss_logistic(y_te, tx_te, w)
 
     return loss_tr, loss_te
 
