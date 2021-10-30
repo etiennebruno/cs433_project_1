@@ -252,7 +252,7 @@ def cross_validation_reg_logistic(y, x, max_iters, k_indices, k, lambda_, gamma,
     w,_ = reg_logistic_regression(y_tr, tx_tr, lambda_, initial_w, max_iters, gamma)
 
     # calculate the loss for train and test data
-    loss_tr = compute_rmse(y_tr, tx_tr, w)
+    loss_tr = compute_rmse(y_tr, tx_tr, w)     #chan
     loss_te = compute_rmse(y_te, tx_te, w)
 
     return loss_tr, loss_te
@@ -372,13 +372,13 @@ def ridge_regression(y, tx, lambda_):
     return w, loss
 
 
-def logistic_regression(y, tx, max_iters, gamma):
+def logistic_regression(y, tx,initial_w, max_iters, gamma):
     # init parameters
     threshold = 1e-8
     losses = []
 
     # build w
-    w = np.zeros((tx.shape[1], 1))
+    w = initial_w
 
     # start the logistic regression
     for iter in range(max_iters):
@@ -386,6 +386,8 @@ def logistic_regression(y, tx, max_iters, gamma):
         loss, w = learning_by_gradient_descent(y, tx, w, gamma)
         # log info
         if iter % 1000 == 0:
+            print("    Current iteration={i}, loss={l}".format(i=iter, l=loss))
+        if iter == 9999:
             print("    Current iteration={i}, loss={l}".format(i=iter, l=loss))
         # converge criterion
         losses.append(loss)
@@ -415,7 +417,11 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     for iter in range(max_iters):
         # get loss and update w.
         loss, w = learning_by_penalized_gradient_one_iter(y, tx, w, gamma, lambda_)
-
+        # log info
+        if iter % 1000 == 0:
+            print("    Current iteration={i}, loss={l}".format(i=iter, l=loss))
+        if iter == 9999:
+            print("    Current iteration={i}, loss={l}".format(i=iter, l=loss))
         # converge criterion
         losses.append(loss)
         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
