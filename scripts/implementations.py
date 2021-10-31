@@ -135,8 +135,6 @@ def cross_validation_ridge(y, x, k_indices, k, lambda_, degree):
     tx_tr = build_poly(x_tr,degree)
     tx_te = build_poly(x_te,degree)
 
-    print(f"before ridge, x shape = {tx_tr.shape}")
-
     # ridge regression
     w,_ = ridge_regression(y_tr, tx_tr, lambda_)
 
@@ -167,7 +165,7 @@ def cross_validation_demo_ridge(y, x, seed, degrees, k_fold, lambdas):
         ind_best_lambda = np.argmin(rmse_te)
         best_lambdas.append(lambdas[ind_best_lambda])
         best_rmses.append(rmse_te[ind_best_lambda])
-        print(f"    min loss for a {degree} polynomial expansion feature = {min(rmse_te)}")
+        #print(f"    min loss for a {degree} polynomial expansion feature = {min(rmse_te)}")
 
     ind_best_degree =  np.argmin(best_rmses)
 
