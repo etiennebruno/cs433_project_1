@@ -8,7 +8,7 @@ Miguel SANCHEZ : miguel-angel.sanchezndoye@epfl.ch <br/>
 Etienne BRUNO : etiene.bruno@epfl.ch <br/>
 
 ##  Aim
-The aim of this project is to find a model able to predict whether a given set of measurements (original data from the CERN) represents the emission of a Higgs boson particle or can be considered as background noise (i.e. is due to physical phenomena we are not interested in). In this project, we implement six different machine learning algorithms on data whose features are carefully chosen, cleaned and eventually improved. Using grid-search and cross-validation, we are able to optimize the hyper parameters. With an accuracy of 80.6\%, ridge regression was found to be the best performing algorithm for this problem.
+The aim of this project is to find a model able to predict whether a given set of measurements (original data from the CERN) represents the emission of a Higgs boson particle or can be considered as background noise (i.e. is due to physical phenomena we are not interested in). In this project, we implement six different machine learning algorithms on data whose features are carefully chosen, cleaned and eventually improved. Using grid-search and cross-validation, we are able to optimize the hyper parameters. With an accuracy of 80.6\% [submission [#164282](https://www.aicrowd.com/4debf471-3bcd-4350-b818-358b16fff330)], ridge regression was found to be the best performing algorithm for this problem.
 
 ## Requirements
 Please make sure you have Python 3 with the following packages installed :
