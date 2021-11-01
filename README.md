@@ -35,7 +35,7 @@ Here's a list of the relevant source files
 
 |Source file | Description|
 |---|---|
-| `implementations.py`  | Regrouping the six machine learning algorithms we hqve developped for this project as well as dependant function|
+|`implementations.py`   | Regrouping the six machine learning algorithms we hqve developped for this project as well as dependant function|
 |`run.py`               | Main script containing the solution of the problem producing our highest prediction score|
-|`helpers.py`           | Containing additional functions used in the project|
+|`proj1_helpers.py`     | Containing additional functions used in the project|
 |`projet1.ipynb`        | Notebook of the project with all the visualization and the analysis of the training data as weel as the code of the training models|
