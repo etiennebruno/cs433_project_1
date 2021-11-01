@@ -23,7 +23,8 @@ git clone git@github.com:etiennebruno/ml_project_1.git
 ```
 Place under the folder `\data` the two `.csv` files : `train.csv` `and test.csv`. <br/>
 To do so, you can unzip the file `data.zip` and then move both `.csv` files back to the directory `\data` <br/>
-Please run the following commands on a terminal to run the main program
+
+To obtain the results published in our report, launch the following commands on a terminal to run python code:
 ```
 cd script
 python run.py
