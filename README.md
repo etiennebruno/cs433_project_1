@@ -19,7 +19,7 @@ Please make sure you have Python 3 with the following packages installed :
 ## Instructions
 Clone the repository using the following command via ssh:
 ```
-git clone git@github.com:etiennebruno/ml_project_1.git
+git clone git@github.com:etiennebruno/cs433_project_1.git
 ```
 Please run the following commands on a terminal to run the main program
 ```
