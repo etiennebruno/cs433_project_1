@@ -19,9 +19,9 @@ Please make sure you have Python 3 with the following packages installed :
 ## Instructions
 Clone the repository using the following command via ssh:
 ```
-git clone git@github.com:etiennebruno/ml_project_1.git
+git clone git@github.com:etiennebruno/cs433_project_1.git
 ```
-Place under the folder `\data` the two `.csv` files : `train.csv` `and test.csv`. <br/>
+Place under the folder `\data` the two `.csv` files : `train.csv` and `test.csv`. <br/>
 To do so, you can unzip the file `data.zip` and then move both `.csv` files back to the directory `\data` <br/>
 
 To obtain the results published in our report, launch the following commands on a terminal to run python code:
