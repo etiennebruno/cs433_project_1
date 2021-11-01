@@ -57,28 +57,14 @@ def compute_gradient_logistic(y, tx, w):
 
 def learning_by_gradient_descent(y, tx, w, gamma):
     """
-    Do one step of gradient descent using logistic regression.
+    Do one step of gradient descen using logistic regression.
     Return the loss and the updated w.
     """
-    # compute the loss:
     loss = compute_loss_logistic(y, tx, w)
-    # compute the gradient:
+    #print(loss) # HERE
     grad = compute_gradient_logistic(y, tx, w)
-    # update w:
     w -= gamma * grad
     return loss, w
-
-
-# def logistic_regression_one_iter(y, tx, w, gamma):
-#     """
-#     Do one step of gradient descen using logistic regression.
-#     Return the loss and the updated w.
-#     """
-#     loss = compute_loss_logistic(y, tx, w)
-#     #print(loss) # HERE
-#     grad = compute_gradient_logistic(y, tx, w)
-#     w -= gamma * grad
-#     return loss, w
 
 
 def penalized_logistic_regression_one_iter(y, tx, w, lambda_):
@@ -370,40 +356,18 @@ def ridge_regression(y, tx, lambda_):
     return w, loss
 
 
-def logistic_regression(y, tx,initial_w, max_iters, gamma):
-    # init parameters
+def logistic_regression(y, tx, initial_w, max_iters, gamma):
+    w = initial_w
     threshold = 1e-8
     losses = []
 
-    # build w
-    w = initial_w
-
-    # start the logistic regression
     for iter in range(max_iters):
-        # get loss and update w.
         loss, w = learning_by_gradient_descent(y, tx, w, gamma)
-        # log info
-        if iter % 1000 == 0:
-            print("    Current iteration={i}, loss={l}".format(i=iter, l=loss))
-        if iter == 9999:
-            print("    Current iteration={i}, loss={l}".format(i=iter, l=loss))
-        # converge criterion
         losses.append(loss)
+        # converge criterion
         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
             break
     return w, losses[-1]
-
-# def logistic_regression(y, tx, initial_w, max_iters, gamma):
-#     w = initial_w
-#     threshold = 1e-8
-#     losses = []
-#
-#     for iter in range(max_iters):
-#         loss, w = logistic_regression_one_iter(y, tx, w, gamma)
-#         losses.append(loss)
-#         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-#             break
-#     return w, losses[-1]
 
 
 def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
